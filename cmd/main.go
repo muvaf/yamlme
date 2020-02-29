@@ -5,6 +5,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	yaml2 "sigs.k8s.io/yaml"
 
 	"github.com/crossplane/crossplane/apis/workload/v1alpha1"
@@ -15,8 +18,8 @@ import (
 
 func main() {
 	dir := "resources"
-
-	resources, err := readResources(dir)
+	resLabels := map[string]string{"app": "tryit"}
+	resources, err := readResources(dir, resLabels)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -28,6 +31,12 @@ func main() {
 			ResourceTemplates: resources,
 		},
 	}
+	kapp.SetGroupVersionKind(v1alpha1.KubernetesApplicationGroupVersionKind)
+	kapp.Spec.ResourceSelector = &v1.LabelSelector{
+		MatchLabels: resLabels,
+	}
+	// provision to randomly available cluster
+	kapp.Spec.TargetSelector = &v1.LabelSelector{}
 	data, err := yaml2.Marshal(kapp)
 	if err != nil {
 		panic(err.Error())
@@ -35,7 +44,7 @@ func main() {
 	fmt.Print(string(data))
 }
 
-func readResources(dir string) ([]v1alpha1.KubernetesApplicationResourceTemplate, error) {
+func readResources(dir string, resLabels map[string]string) ([]v1alpha1.KubernetesApplicationResourceTemplate, error) {
 	var result []v1alpha1.KubernetesApplicationResourceTemplate
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
@@ -58,9 +67,14 @@ func readResources(dir string) ([]v1alpha1.KubernetesApplicationResourceTemplate
 				}
 				return err
 			}
+			if obj.GetName() == "" {
+				continue
+			}
+			meta.AddLabels(obj, map[string]string{"app": "tryit"})
 			kart := v1alpha1.KubernetesApplicationResourceTemplate{
 				ObjectMeta: v1.ObjectMeta{
-					Name: fmt.Sprintf("local-%s", obj.GetName()),
+					Name:   fmt.Sprintf("local-%s", strings.ReplaceAll(obj.GetName(), ":", "-")),
+					Labels: resLabels,
 				},
 				Spec: v1alpha1.KubernetesApplicationResourceSpec{
 					Template: obj,
