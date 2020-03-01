@@ -64,4 +64,4 @@ local-stackinstalls.stacks.crossplane.io                      CustomResourceDefi
 local-stacks.stacks.crossplane.io                             CustomResourceDefinition   stacks.stacks.crossplane.io                             03c30186-4c27-4c3b-a242-4986997999eb   Submitted
 ```
 
- to generate `KubernetesApplication` from a directory of resources. All of them are deployed but Crossplane pod logged some permission issues, which are probably because I didn't configure something.I wrote this
+I wrote this to generate `KubernetesApplication` from a directory of resources. All of them are deployed but Crossplane pod logged some permission issues, which are probably because I didn't configure something.
